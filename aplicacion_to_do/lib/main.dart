@@ -1,125 +1,285 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(TaskApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
+class TaskApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Task Manager',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: TaskScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class TaskScreen extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _TaskScreenState createState() => _TaskScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _TaskScreenState extends State<TaskScreen> {
+  List<String> pendingTasks = [];
+  List<String> inProgressTasks = [];
+  List<String> completedTasks = [];
 
-  void _incrementCounter() {
+  TextEditingController nameController = TextEditingController();
+
+  void addTask(String task) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      pendingTasks.add(task);
     });
+  }
+
+  void moveTask(String task, List<String> source, List<String> destination) {
+    setState(() {
+      source.remove(task);
+      destination.add(task);
+    });
+  }
+
+  void editTask(String oldTask, String newTask, String status) async {
+    // Aquí puedes usar nameController
+    nameController.text = newTask;
+    // Otro código de la función editTask
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Editar tarea'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(labelText: 'Nombre'),
+                  ),
+                  DropdownButton<String>(
+                    value: status,
+                    items: <String>['Pendiente', 'En desarrollo', 'Completado']
+                        .map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (String? value) {
+                      setState(() {
+                        status = value!;
+                      });
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  final indexPending = pendingTasks.indexOf(oldTask);
+                  final indexInProgress = inProgressTasks.indexOf(oldTask);
+                  final indexCompleted = completedTasks.indexOf(oldTask);
+
+                  // Guardar el estado original de la tarea y su índice
+                  String originalStatus = '';
+                  int originalIndex = -1;
+
+                  if (indexPending != -1) {
+                    originalStatus = 'Pendiente';
+                    originalIndex = indexPending;
+                  } else if (indexInProgress != -1) {
+                    originalStatus = 'En desarrollo';
+                    originalIndex = indexInProgress;
+                  } else if (indexCompleted != -1) {
+                    originalStatus = 'Completado';
+                    originalIndex = indexCompleted;
+                  }
+
+                  // Si el estado original es diferente al nuevo estado, eliminar la tarea del estado anterior y agregarla al nuevo estado
+                  if (originalStatus != status) {
+                    if (originalStatus == 'Pendiente') {
+                      pendingTasks.removeAt(originalIndex);
+                    } else if (originalStatus == 'En desarrollo') {
+                      inProgressTasks.removeAt(originalIndex);
+                    } else if (originalStatus == 'Completado') {
+                      completedTasks.removeAt(originalIndex);
+                    }
+
+                    if (status == 'Pendiente') {
+                      pendingTasks.add(nameController.text);
+                    } else if (status == 'En desarrollo') {
+                      inProgressTasks.add(nameController.text);
+                    } else if (status == 'Completado') {
+                      completedTasks.add(nameController.text);
+                    }
+                  } else {
+                    // Si el estado original es el mismo que el nuevo estado, simplemente cambiar el nombre de la tarea
+                    if (originalStatus == 'Pendiente') {
+                      pendingTasks[originalIndex] = nameController.text;
+                    } else if (originalStatus == 'En desarrollo') {
+                      inProgressTasks[originalIndex] = nameController.text;
+                    } else if (originalStatus == 'Completado') {
+                      completedTasks[originalIndex] = nameController.text;
+                    }
+                  }
+                });
+                Navigator.of(context).pop();
+              },
+              child: Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text('Task Manager'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+            TaskColumn(
+              title: 'Pendiente',
+              tasks: pendingTasks,
+              onAddTask: addTask,
+              onMoveTask: (task) =>
+                  moveTask(task, pendingTasks, inProgressTasks),
+              onEditTask: editTask,
+              showTaskInput: true, // Mostrar el campo de texto en "Pendiente"
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            TaskColumn(
+              title: 'En desarrollo',
+              tasks: inProgressTasks,
+              onAddTask: (task) {
+                // No se agrega el widget TaskInput aquí
+              },
+              onMoveTask: (task) =>
+                  moveTask(task, inProgressTasks, completedTasks),
+              onEditTask: editTask,
+              showTaskInput: false,
+            ),
+            TaskColumn(
+              title: 'Completado',
+              tasks: completedTasks,
+              onAddTask: (task) {
+                // No se agrega el widget TaskInput aquí
+              },
+              onMoveTask: (task) {
+                // No se agrega el widget TaskInput aquí
+              },
+              onEditTask: editTask,
+              showTaskInput: false,
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+class TaskColumn extends StatelessWidget {
+  final String title;
+  final List<String> tasks;
+  final Function(String) onAddTask;
+  final Function(String) onMoveTask;
+  final Function(String, String, String) onEditTask;
+  final bool
+      showTaskInput; // Nuevo parámetro para controlar la visibilidad del campo de texto
+
+  TaskColumn({
+    required this.title,
+    required this.tasks,
+    required this.onAddTask,
+    required this.onMoveTask,
+    required this.onEditTask,
+    required this.showTaskInput,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Card(
+        child: Column(
+          children: <Widget>[
+            Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Text(
+                title,
+                style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: tasks.length,
+                itemBuilder: (context, index) {
+                  final task = tasks[index];
+                  return ListTile(
+                    title: Text(task),
+                    onTap: () => onEditTask(task, task, title),
+                  );
+                },
+              ),
+            ),
+            if (showTaskInput)
+              TaskInput(
+                  onAddTask:
+                      onAddTask), // Mostrar el campo de texto si showTaskInput es true
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class TaskInput extends StatelessWidget {
+  final Function(String) onAddTask;
+
+  TaskInput({required this.onAddTask});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(8.0),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: TextField(
+              decoration: InputDecoration(hintText: 'Nueva tarea'),
+              onSubmitted: (value) {
+                if (value.isNotEmpty) {
+                  onAddTask(value);
+                }
+              },
+            ),
+          ),
+          SizedBox(width: 8.0),
+          ElevatedButton(
+            onPressed: () {
+              // Se puede agregar lógica adicional aquí si es necesario
+            },
+            child: Text('Agregar'),
+          ),
+        ],
+      ),
     );
   }
 }
