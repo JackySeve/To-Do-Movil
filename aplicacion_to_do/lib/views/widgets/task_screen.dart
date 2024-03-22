@@ -12,6 +12,7 @@ class _TaskScreenState extends State<TaskScreen> {
   List<String> completedTasks = [];
 
   TextEditingController nameController = TextEditingController();
+  TextEditingController descrptionController = TextEditingController();
 
   void addTask(String task) {
     setState(() {
@@ -26,10 +27,16 @@ class _TaskScreenState extends State<TaskScreen> {
     });
   }
 
+  void removeTask(String task) {
+    setState(() {
+      pendingTasks.remove(task);
+      inProgressTasks.remove(task);
+      completedTasks.remove(task);
+    });
+  }
+
   void editTask(String oldTask, String newTask, String status) async {
-    // Aquí puedes usar nameController
     nameController.text = newTask;
-    // Otro código de la función editTask
     await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -43,6 +50,11 @@ class _TaskScreenState extends State<TaskScreen> {
                   TextField(
                     controller: nameController,
                     decoration: InputDecoration(labelText: 'Nombre'),
+                  ),
+                  TextField(
+                    controller: descrptionController,
+                    decoration: InputDecoration(labelText: 'Descripción'),
+                    maxLines: null,
                   ),
                   DropdownButton<String>(
                     value: status,
@@ -77,7 +89,6 @@ class _TaskScreenState extends State<TaskScreen> {
                   final indexInProgress = inProgressTasks.indexOf(oldTask);
                   final indexCompleted = completedTasks.indexOf(oldTask);
 
-                  // Guardar el estado original de la tarea y su índice
                   String originalStatus = '';
                   int originalIndex = -1;
 
@@ -92,7 +103,6 @@ class _TaskScreenState extends State<TaskScreen> {
                     originalIndex = indexCompleted;
                   }
 
-                  // Si el estado original es diferente al nuevo estado, eliminar la tarea del estado anterior y agregarla al nuevo estado
                   if (originalStatus != status) {
                     if (originalStatus == 'Pendiente') {
                       pendingTasks.removeAt(originalIndex);
@@ -110,7 +120,6 @@ class _TaskScreenState extends State<TaskScreen> {
                       completedTasks.add(nameController.text);
                     }
                   } else {
-                    // Si el estado original es el mismo que el nuevo estado, simplemente cambiar el nombre de la tarea
                     if (originalStatus == 'Pendiente') {
                       pendingTasks[originalIndex] = nameController.text;
                     } else if (originalStatus == 'En desarrollo') {
@@ -148,30 +157,28 @@ class _TaskScreenState extends State<TaskScreen> {
               onMoveTask: (task) =>
                   moveTask(task, pendingTasks, inProgressTasks),
               onEditTask: editTask,
-              showTaskInput: true, // Mostrar el campo de texto en "Pendiente"
+              onRemoveTask: removeTask,
+              showTaskInput: true,
             ),
             TaskColumn(
               title: 'En desarrollo',
               tasks: inProgressTasks,
-              onAddTask: (task) {
-                // No se agrega el widget TaskInput aquí
-              },
+              onAddTask: (task) {},
               onMoveTask: (task) =>
                   moveTask(task, inProgressTasks, completedTasks),
               onEditTask: editTask,
-              showTaskInput: false,
+              onRemoveTask: removeTask,
+              showTaskInput: true,
             ),
             TaskColumn(
               title: 'Completado',
               tasks: completedTasks,
-              onAddTask: (task) {
-                // No se agrega el widget TaskInput aquí
-              },
-              onMoveTask: (task) {
-                // No se agrega el widget TaskInput aquí
-              },
+              onAddTask: (task) {},
+              onMoveTask: (task) =>
+                  moveTask(task, inProgressTasks, completedTasks),
               onEditTask: editTask,
-              showTaskInput: false,
+              onRemoveTask: removeTask,
+              showTaskInput: true,
             ),
           ],
         ),

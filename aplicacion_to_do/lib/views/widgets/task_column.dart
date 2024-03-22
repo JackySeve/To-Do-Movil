@@ -7,8 +7,8 @@ class TaskColumn extends StatelessWidget {
   final Function(String) onAddTask;
   final Function(String) onMoveTask;
   final Function(String, String, String) onEditTask;
-  final bool
-      showTaskInput; // Nuevo parámetro para controlar la visibilidad del campo de texto
+  final Function(String) onRemoveTask;
+  final bool showTaskInput;
 
   TaskColumn({
     required this.title,
@@ -16,6 +16,7 @@ class TaskColumn extends StatelessWidget {
     required this.onAddTask,
     required this.onMoveTask,
     required this.onEditTask,
+    required this.onRemoveTask,
     required this.showTaskInput,
   });
 
@@ -40,14 +41,15 @@ class TaskColumn extends StatelessWidget {
                   return ListTile(
                     title: Text(task),
                     onTap: () => onEditTask(task, task, title),
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () => onRemoveTask(task),
+                    ),
                   );
                 },
               ),
             ),
-            if (showTaskInput)
-              TaskInput(
-                  onAddTask:
-                      onAddTask), // Mostrar el campo de texto si showTaskInput es true
+            if (showTaskInput) TaskInput(onAddTask: onAddTask),
           ],
         ),
       ),
