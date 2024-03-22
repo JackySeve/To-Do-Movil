@@ -3,15 +3,17 @@ import 'task_input.dart';
 
 class TaskColumn extends StatelessWidget {
   final String title;
+  final String description;
   final List<String> tasks;
   final Function(String) onAddTask;
   final Function(String) onMoveTask;
-  final Function(String, String, String) onEditTask;
+  final Function(String, String, String, String) onEditTask;
   final Function(String) onRemoveTask;
   final bool showTaskInput;
 
   TaskColumn({
     required this.title,
+    required this.description,
     required this.tasks,
     required this.onAddTask,
     required this.onMoveTask,
@@ -40,7 +42,7 @@ class TaskColumn extends StatelessWidget {
                   final task = tasks[index];
                   return ListTile(
                     title: Text(task),
-                    onTap: () => onEditTask(task, task, title),
+                    onTap: () => onEditTask(task, task, title, description),
                     trailing: IconButton(
                       icon: Icon(Icons.delete),
                       onPressed: () => onRemoveTask(task),

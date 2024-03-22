@@ -35,8 +35,10 @@ class _TaskScreenState extends State<TaskScreen> {
     });
   }
 
-  void editTask(String oldTask, String newTask, String status) async {
+  void editTask(
+      String oldTask, String newTask, String status, String description) async {
     nameController.text = newTask;
+    descrptionController.text = description;
     await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -153,6 +155,7 @@ class _TaskScreenState extends State<TaskScreen> {
             TaskColumn(
               title: 'Pendiente',
               tasks: pendingTasks,
+              description: descrptionController.text,
               onAddTask: addTask,
               onMoveTask: (task) =>
                   moveTask(task, pendingTasks, inProgressTasks),
@@ -163,22 +166,24 @@ class _TaskScreenState extends State<TaskScreen> {
             TaskColumn(
               title: 'En desarrollo',
               tasks: inProgressTasks,
-              onAddTask: (task) {},
+              description: descrptionController.text,
+              onAddTask: addTask,
               onMoveTask: (task) =>
                   moveTask(task, inProgressTasks, completedTasks),
               onEditTask: editTask,
               onRemoveTask: removeTask,
-              showTaskInput: true,
+              showTaskInput: false,
             ),
             TaskColumn(
               title: 'Completado',
               tasks: completedTasks,
-              onAddTask: (task) {},
+              description: descrptionController.text,
+              onAddTask: addTask,
               onMoveTask: (task) =>
                   moveTask(task, inProgressTasks, completedTasks),
               onEditTask: editTask,
               onRemoveTask: removeTask,
-              showTaskInput: true,
+              showTaskInput: false,
             ),
           ],
         ),
