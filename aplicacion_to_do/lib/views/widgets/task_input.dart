@@ -1,29 +1,39 @@
 import 'package:flutter/material.dart';
 
-class TaskInput extends StatelessWidget {
-  final Function(String) onAddTask;
+class TaskInput extends StatefulWidget {
+  final Function(String, String) onAddTask;
 
   TaskInput({required this.onAddTask});
+
+  @override
+  _TaskInputState createState() => _TaskInputState();
+}
+
+class _TaskInputState extends State<TaskInput> {
+  TextEditingController _nameController = TextEditingController();
+  TextEditingController _descriptionController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.all(8.0),
-      child: Row(
+      child: Column(
         children: <Widget>[
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(hintText: 'Nueva tarea'),
-              onSubmitted: (value) {
-                if (value.isNotEmpty) {
-                  onAddTask(value);
-                }
-              },
-            ),
+          TextField(
+            controller: _nameController,
+            decoration: InputDecoration(hintText: 'Nombre'),
           ),
-          SizedBox(width: 8.0),
+          TextField(
+            controller: _descriptionController,
+            decoration: InputDecoration(hintText: 'Descripción'),
+          ),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              widget.onAddTask(
+                  _nameController.text, _descriptionController.text);
+              _nameController.clear();
+              _descriptionController.clear();
+            },
             child: Text('Agregar'),
           ),
         ],

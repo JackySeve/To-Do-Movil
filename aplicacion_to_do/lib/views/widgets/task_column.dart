@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
+import 'task.dart';
 import 'task_input.dart';
 
 class TaskColumn extends StatelessWidget {
   final String title;
-  final String description;
-  final List<String> tasks;
-  final Function(String) onAddTask;
-  final Function(String) onMoveTask;
-  final Function(String, String, String, String) onEditTask;
-  final Function(String) onRemoveTask;
+  final List<Task> tasks;
+  final Function(String, String) onAddTask;
+  final Function(Task) onMoveTask;
+  final Function(Task, String, String, String) onEditTask;
+  final Function(Task) onRemoveTask;
   final bool showTaskInput;
 
   TaskColumn({
     required this.title,
-    required this.description,
     required this.tasks,
     required this.onAddTask,
     required this.onMoveTask,
@@ -41,8 +40,10 @@ class TaskColumn extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final task = tasks[index];
                   return ListTile(
-                    title: Text(task),
-                    onTap: () => onEditTask(task, task, title, description),
+                    title: Text(task.name),
+                    subtitle: Text(task.description),
+                    onTap: () =>
+                        onEditTask(task, task.name, title, task.description),
                     trailing: IconButton(
                       icon: Icon(Icons.delete),
                       onPressed: () => onRemoveTask(task),

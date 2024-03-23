@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'task.dart';
 import 'task_column.dart';
 
 class TaskScreen extends StatefulWidget {
@@ -7,38 +8,35 @@ class TaskScreen extends StatefulWidget {
 }
 
 class _TaskScreenState extends State<TaskScreen> {
-  List<String> pendingTasks = [];
-  List<String> inProgressTasks = [];
-  List<String> completedTasks = [];
+  List<Task> tasks = []; // Utilizaremos una lista única para todas las tareas
 
   TextEditingController nameController = TextEditingController();
-  TextEditingController descrptionController = TextEditingController();
+  TextEditingController descriptionController = TextEditingController();
 
-  void addTask(String task) {
+  void addTask(String name, String description) {
     setState(() {
-      pendingTasks.add(task);
+      tasks
+          .add(Task(name: name, description: description, status: 'Pendiente'));
     });
   }
 
-  void moveTask(String task, List<String> source, List<String> destination) {
+  void moveTask(Task task, String newStatus) {
     setState(() {
-      source.remove(task);
-      destination.add(task);
+      task.status = newStatus;
     });
   }
 
-  void removeTask(String task) {
+  void removeTask(Task task) {
     setState(() {
-      pendingTasks.remove(task);
-      inProgressTasks.remove(task);
-      completedTasks.remove(task);
+      tasks.remove(task);
     });
   }
 
-  void editTask(
-      String oldTask, String newTask, String status, String description) async {
-    nameController.text = newTask;
-    descrptionController.text = description;
+  void editTask(Task task, String newName, String newStatus,
+      String newDescription) async {
+    nameController.text = newName;
+    descriptionController.text = newDescription;
+    String? dropdownValue = newStatus;
     await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -54,12 +52,12 @@ class _TaskScreenState extends State<TaskScreen> {
                     decoration: InputDecoration(labelText: 'Nombre'),
                   ),
                   TextField(
-                    controller: descrptionController,
+                    controller: descriptionController,
                     decoration: InputDecoration(labelText: 'Descripción'),
                     maxLines: null,
                   ),
                   DropdownButton<String>(
-                    value: status,
+                    value: dropdownValue,
                     items: <String>['Pendiente', 'En desarrollo', 'Completado']
                         .map((String value) {
                       return DropdownMenuItem<String>(
@@ -69,7 +67,7 @@ class _TaskScreenState extends State<TaskScreen> {
                     }).toList(),
                     onChanged: (String? value) {
                       setState(() {
-                        status = value!;
+                        dropdownValue = value!;
                       });
                     },
                   ),
@@ -87,53 +85,61 @@ class _TaskScreenState extends State<TaskScreen> {
             TextButton(
               onPressed: () {
                 setState(() {
-                  final indexPending = pendingTasks.indexOf(oldTask);
-                  final indexInProgress = inProgressTasks.indexOf(oldTask);
-                  final indexCompleted = completedTasks.indexOf(oldTask);
-
-                  String originalStatus = '';
-                  int originalIndex = -1;
-
-                  if (indexPending != -1) {
-                    originalStatus = 'Pendiente';
-                    originalIndex = indexPending;
-                  } else if (indexInProgress != -1) {
-                    originalStatus = 'En desarrollo';
-                    originalIndex = indexInProgress;
-                  } else if (indexCompleted != -1) {
-                    originalStatus = 'Completado';
-                    originalIndex = indexCompleted;
-                  }
-
-                  if (originalStatus != status) {
-                    if (originalStatus == 'Pendiente') {
-                      pendingTasks.removeAt(originalIndex);
-                    } else if (originalStatus == 'En desarrollo') {
-                      inProgressTasks.removeAt(originalIndex);
-                    } else if (originalStatus == 'Completado') {
-                      completedTasks.removeAt(originalIndex);
-                    }
-
-                    if (status == 'Pendiente') {
-                      pendingTasks.add(nameController.text);
-                    } else if (status == 'En desarrollo') {
-                      inProgressTasks.add(nameController.text);
-                    } else if (status == 'Completado') {
-                      completedTasks.add(nameController.text);
-                    }
-                  } else {
-                    if (originalStatus == 'Pendiente') {
-                      pendingTasks[originalIndex] = nameController.text;
-                    } else if (originalStatus == 'En desarrollo') {
-                      inProgressTasks[originalIndex] = nameController.text;
-                    } else if (originalStatus == 'Completado') {
-                      completedTasks[originalIndex] = nameController.text;
-                    }
-                  }
+                  task.name = nameController.text;
+                  task.description = descriptionController.text;
+                  task.status = dropdownValue!;
                 });
                 Navigator.of(context).pop();
               },
               child: Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showAddTaskDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Agregar nueva tarea'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(labelText: 'Nombre'),
+                  ),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: InputDecoration(labelText: 'Descripción'),
+                    maxLines: null,
+                  ),
+                ],
+              );
+            },
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (nameController.text.isNotEmpty) {
+                  addTask(nameController.text, descriptionController.text);
+                  nameController.clear();
+                  descriptionController.clear();
+                  Navigator.of(context).pop();
+                }
+              },
+              child: Text('Agregar'),
             ),
           ],
         );
@@ -154,39 +160,46 @@ class _TaskScreenState extends State<TaskScreen> {
           children: <Widget>[
             TaskColumn(
               title: 'Pendiente',
-              tasks: pendingTasks,
-              description: descrptionController.text,
+              tasks: tasks.where((task) => task.status == 'Pendiente').toList(),
               onAddTask: addTask,
               onMoveTask: (task) =>
-                  moveTask(task, pendingTasks, inProgressTasks),
+                  (String newStatus) => moveTask(task, newStatus),
               onEditTask: editTask,
               onRemoveTask: removeTask,
-              showTaskInput: true,
+              showTaskInput: false,
             ),
             TaskColumn(
               title: 'En desarrollo',
-              tasks: inProgressTasks,
-              description: descrptionController.text,
+              tasks: tasks
+                  .where((task) => task.status == 'En desarrollo')
+                  .toList(),
               onAddTask: addTask,
               onMoveTask: (task) =>
-                  moveTask(task, inProgressTasks, completedTasks),
+                  (String newStatus) => moveTask(task, newStatus),
               onEditTask: editTask,
               onRemoveTask: removeTask,
               showTaskInput: false,
             ),
             TaskColumn(
               title: 'Completado',
-              tasks: completedTasks,
-              description: descrptionController.text,
+              tasks:
+                  tasks.where((task) => task.status == 'Completado').toList(),
               onAddTask: addTask,
               onMoveTask: (task) =>
-                  moveTask(task, inProgressTasks, completedTasks),
+                  (String newStatus) => moveTask(task, newStatus),
               onEditTask: editTask,
               onRemoveTask: removeTask,
               showTaskInput: false,
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showAddTaskDialog();
+        },
+        tooltip: 'Agregar tarea',
+        child: Icon(Icons.add),
       ),
     );
   }
